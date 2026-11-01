@@ -1,0 +1,39 @@
+---
+layout: runbook
+title: '0002 · Split a ticket by cause, not subject'
+owner: greensteph
+status: accepted
+reviewed: 2026-11-01
+signature: 'v1.eyJzdWIiOiI2NDU3IiwiYXVkIjoiY2hhbGxlbmdlOndoYXQtaXQtc2hvd3MiLCJpYXQiOjE3OTM1NzAyMDgsImV4cCI6MTc5MzY1NjYwOH0.3ETGFSJ7l0KgQXJzSsoHSiCY_8hHOnFbPBuLS57uumI'
+---
+
+<script>
+  import RenderStamp from '#lib/kb/RenderStamp.svelte';
+</script>
+
+**Date:** 1 November 2026 · **Deciders:** greensteph, support desk
+
+Replaces [0001 · Duplicates share a subject line](/kb/decisions/0001-dedupe-by-subject).
+
+## Context
+
+[0001](/kb/decisions/0001-dedupe-by-subject) merged reports by subject line alone, so nobody read
+the body. It was fast, but it put different bugs in one ticket. #4471 is the proof: 412 reports
+merged as one "known" issue actually held two causes, the month-first parser (379) and the
+`booking-v3` form hint (33). The second had no ticket of its own and no owner.
+
+## Decision
+
+Subject match still groups incoming reports, because it is fast during an incident. But before a
+ticket goes to engineering, split it by **cause**, computed by `src/lib/kb/causes.ts` from the
+tenant's locale and booking form, not by its subject. One cause, one ticket, one owner. A report
+whose body reads differently from its computed cause (`desk-notes.json`) is footnoted, not hidden.
+
+## Consequences
+
+- #4471 splits into two tickets: the parser bug (379 reports) and the form-hint bug (33 reports).
+- Engineering sees one thread per cause, with an honest count, instead of one ticket of 412.
+- Triage stays fast: the subject-line group is still the first pass; the cause split runs on the
+  merged set, from data, at render time.
+
+<RenderStamp {signature} />
