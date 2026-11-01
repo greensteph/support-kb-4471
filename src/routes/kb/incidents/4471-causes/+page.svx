@@ -1,0 +1,55 @@
+---
+layout: runbook
+title: '#4471 · two problems, not one'
+owner: greensteph
+status: proposed
+reviewed: 2026-11-01
+signature: 'v1.eyJzdWIiOiI2NDU3IiwiYXVkIjoiY2hhbGxlbmdlOndoYXQtaXQtc2hvd3MiLCJpYXQiOjE3OTM1NzAyMDgsImV4cCI6MTc5MzY1NjYwOH0.3ETGFSJ7l0KgQXJzSsoHSiCY_8hHOnFbPBuLS57uumI'
+---
+
+<script>
+  import CauseTable from '#lib/kb/CauseTable.svelte';
+  import Callout from '#lib/kb/Callout.svelte';
+  import RenderStamp from '#lib/kb/RenderStamp.svelte';
+</script>
+
+#4471 was merged by subject line ([decision 0001](/kb/decisions/0001-dedupe-by-subject)), so it
+swept up every "wrong day" report whatever caused it. Nobody read the bodies. Run `causes.ts`
+over the 412 deduped reports (427 rows, 15 are duplicate ids from overlapping export pages) and
+they split by tenant locale and booking form into **two** distinct problems, not one.
+
+<Callout>
+Two causes, two tickets. #4471 is really the parser bug; the form-hint bug rode in on a matching
+subject line and has no ticket of its own.
+</Callout>
+
+## What #4471 actually holds
+
+<CauseTable ticket={4471} />
+
+## The two problems
+
+**1. The date parser reads month-first (379 reports).** The shared parser reads every date month
+first. All eleven tenants run day-first (European) locales, so a date like 7/4 (7 April) comes
+back as 4 July. This is the real #4471. It covers every channel (app 204, email 150, form 25) and
+every tenant, seen 2026-04-01 through 2026-10-04. Filed as [parser · 379 reports](https://github.com/greensteph/support-kb-4471/issues/1).
+
+**2. The booking-v3 form hint says MM/DD/YYYY (33 reports).** Three tenants (alder.physio,
+copper.studio, pale.harbour) run the `booking-v3` form, whose date field prints a `MM/DD/YYYY`
+hint to day-first users. They type month-first and the form stores it that way: a different bug,
+in the form, not the parser. Form channel only, seen 2026-04-17 through 2026-09-22. Filed as
+[hint · 33 reports](https://github.com/greensteph/support-kb-4471/issues/2).
+
+Intake's `intakeTag` guessed wrong both ways: it tagged 23 parser reports as `hint` and 15 hint
+reports as `parser`. The cause is the tenant's locale and form, not intake's guess at the
+browser.
+
+## One-day move (a footnote, not a third ticket)
+
+`desk-notes.json` flags five reports that read as a one-day shift rather than a month flip
+(for example "client in Lisbon got Tuesday, client in Toronto got Monday, same meeting"). The
+desk counts them under `parser` by tenant and footnotes them, so they stay inside the 379 above.
+Worth a second look as a possible timezone or off-by-one bug, but not a separate problem in
+#4471 today.
+
+<RenderStamp {signature} />
